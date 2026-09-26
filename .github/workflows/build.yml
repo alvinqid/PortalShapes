@@ -1,0 +1,64 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*", "V*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MOD_NAME: PortalShapes
+  NDK_VERSION: r29
+
+jobs:
+  android-arm64-v8a:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK ${{ env.NDK_VERSION }}
+        run: |
+          sdkmanager "ndk;29.0.14206865"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmake zip
+
+      - name: Configure
+        run: xmake f -m release --ndk="${ANDROID_NDK_ROOT}"
+
+      - name: Build
+        run: xmake -y
+
+      - name: Package .levipack
+        id: package
+        run: scripts/package_levipack.sh "$MOD_NAME" build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.MOD_NAME }}-android-arm64-v8a
+          path: |
+            ${{ steps.package.outputs.so_file }}
+            ${{ steps.package.outputs.pack_file }}
+
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.package.outputs.pack_file }}

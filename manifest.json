@@ -1,0 +1,15 @@
+{
+  "type": "preload-native",
+  "name": "PortalShapes",
+  "description": "Extends Nether portal shape handling without replacing vanilla portal placement logic.",
+  "author": "TheRealBatu",
+  "version": "1.7.1",
+  "entry": "libPortalShapes.so",
+  "minecraft_versions": [
+    "1.26.*",
+    "1.26.4*",
+    "1.26.5*"
+  ],
+  "overwrite_files": [],
+  "overwrite_folders": []
+}
